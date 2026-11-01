@@ -1,0 +1,39 @@
+{
+    "model_details": {
+        "name": "Random Forest Cardiovascular Risk Classifier",
+        "version": "1.2.0",
+        "architecture": "Ensemble Decision Trees (RandomForestClassifier + Calibrated Preprocessor)",
+        "license": "Academic Research / Educational Use Only",
+        "date": "2026-09-29"
+    },
+    "intended_use": {
+        "primary_intended_use": "Decision-support exploratory risk stratification on tabular patient health markers.",
+        "primary_users": "Clinical ML researchers, healthcare educators, students.",
+        "out_of_scope_use_cases": [
+            "Standalone clinical diagnostic device",
+            "Automated emergency triage without physician review",
+            "Direct prescription or therapeutic decision-making"
+        ]
+    },
+    "training_data": {
+        "source": "Cardiovascular Disease Tabular Cohort (70,000 patient records)",
+        "split_ratio": "80% Train (54,880 rows) / 20% Test (13,720 rows)",
+        "physiologic_filters": [
+            "Systolic BP 50-250 mmHg",
+            "Diastolic BP 40-150 mmHg",
+            "Inverted BP (Systolic >= Diastolic)",
+            "Height 100-220 cm, Weight 35-200 kg"
+        ]
+    },
+    "quantitative_metrics": {
+        "test_accuracy": "72.76%",
+        "test_roc_auc": "0.7959",
+        "test_f1_score": "0.7126",
+        "test_sensitivity_recall": "68.27%",
+        "test_specificity": "77.15%"
+    },
+    "ethical_considerations": {
+        "fairness_demographics": "Model relies on physical biomarkers (BP, BMI, Age, Lipids). Performance should be routinely calibrated across diverse demographic sub-populations.",
+        "disclaimer": "Academic ML proof-of-concept. All outputs are risk probabilities, not diagnostic determinations."
+    }
+}
