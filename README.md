@@ -174,20 +174,4 @@ npm run dev
 
 ---
 
-## 🎓 Viva & Academic Defense Q&A Guide
-
-### Q1: How did you ensure ZERO Data Leakage during preprocessing?
-> **Answer**: We divided the dataset into an 80% training set and a 20% test set **prior** to computing any feature scaling, normalization, or transformation statistics. All scikit-learn transformers (`StandardScaler`, `OneHotEncoder`/`ColumnTransformer`) were fitted strictly on training folds within a 5-Fold Stratified Cross-Validation framework. Test data remained completely unseen until the final evaluation.
-
-### Q2: Why did you filter physiological outliers rather than imputing or clipping them?
-> **Answer**: Extreme outliers in blood pressure (e.g. systolic BP values of `16020` or `-150`, and inverted records where $ap\_hi < ap\_lo$) represent manual data-entry typographical errors rather than biological variation. Imputing or winsorizing extreme errors introduces synthetic bias. Removing these corrupted records (~2.0%) cleanly retained 68,600 highly reliable patient records.
-
-### Q3: Why is LightGBM / Soft-Voting Ensemble preferred over single decision trees?
-> **Answer**: While individual Decision Trees are susceptible to high variance and overfitting (achieving 0.7084 test F1), LightGBM utilizes histogram-based gradient boosted decision trees that handle non-linear feature interactions efficiently. It achieved a superior Test ROC-AUC of **0.7997** and F1-score of **0.7149**, closely mirroring its cross-validation score (**0.7208**), confirming high generalization stability.
-
-### Q4: How is Explainable AI (XAI) implemented for clinical trust?
-> **Answer**: We incorporated TreeSHAP to calculate exact Shapley contributions from cooperative game theory. Rather than providing a black-box probability, the system produces waterfall and summary plots revealing that Systolic Blood Pressure ($ap\_hi$), Mean Arterial Pressure ($MAP$), Age, and Cholesterol are the primary drivers of elevated cardiovascular risk.
-
-### Q5: Why and how did you incorporate ECG-Based Arrhythmia Classification?
-> **Answer**: While routine tabular physical examination records (blood pressure, BMI, cholesterol) estimate long-term lifestyle and chronic cardiovascular risk, acute cardiac events are frequently triggered by electrophysiological rhythm disturbances. We integrated an **ECG Arrhythmia Classifier** trained on the internationally recognized **MIT-BIH Arrhythmia Database** (109,446 cardiac beats). Using a gradient-boosted LightGBM architecture, the model classifies individual heartbeat morphology into 5 standard AAMI EC57 classes (`Normal Beat`, `Supraventricular Ectopic`, `Ventricular Ectopic / PVC`, `Fusion Beat`, and `Unknown/Paced Beat`), achieving **98.43% test accuracy** and a **0.9839 weighted F1-score** across 21,892 unseen test beats. This gives our decision-support framework multimodal diagnostic capability spanning chronic risk estimation and acute electrophysiological rhythm screening.
 
