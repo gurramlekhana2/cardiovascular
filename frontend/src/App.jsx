@@ -8,13 +8,14 @@ import ComorbidityFlags from './components/ComorbidityFlags';
 import ComparisonMode from './components/ComparisonMode';
 import MobileBottomSheet from './components/MobileBottomSheet';
 import PrintableReport from './components/PrintableReport';
+import ModelPerformancePage from './pages/ModelPerformancePage';
 import {
   calculatePhysiologicalFeatures,
   computeRiskAssessment,
   getReferenceRanges,
   detectComorbidityFlags,
 } from './modelUtils';
-import { Activity, ShieldCheck, Heart, Moon, Sun, Printer, Download } from 'lucide-react';
+import { Activity, ShieldCheck, Heart, Moon, Sun, Printer, Download, BarChart3, Home } from 'lucide-react';
 
 const DEFAULT_INPUTS = {
   age: 52,
@@ -32,6 +33,27 @@ const DEFAULT_INPUTS = {
 
 export default function App() {
   const assessmentRef = useRef(null);
+
+  // ── URL & Page Routing State ─────────────────────────────────────────────
+  const [currentPath, setCurrentPath] = useState(() => {
+    return window.location.pathname === '/model-performance' ? '/model-performance' : '/';
+  });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname === '/model-performance' ? '/model-performance' : '/');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (path) => {
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+    setCurrentPath(path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // ── Persistent dark mode (localStorage) ──────────────────────────────────
   const [darkMode, setDarkMode] = useState(() => {
@@ -64,7 +86,14 @@ export default function App() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleStartAssessment = () => {
-    assessmentRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (currentPath !== '/') {
+      navigateTo('/');
+      setTimeout(() => {
+        assessmentRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      assessmentRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleCalculateRisk = () => {
@@ -108,18 +137,20 @@ export default function App() {
       const printContainer = document.createElement('div');
       printContainer.id = 'clean-pdf-export-container';
       printContainer.style.position = 'fixed';
-      printContainer.style.left = '0';
+      printContainer.style.left = '-9999px';
       printContainer.style.top = '0';
       printContainer.style.width = '780px';
       printContainer.style.backgroundColor = '#ffffff';
-      printContainer.style.zIndex = '999999';
+      printContainer.style.zIndex = '-1';
+      printContainer.style.pointerEvents = 'none';
       printContainer.style.margin = '0';
       printContainer.style.padding = '24px 32px';
       printContainer.innerHTML = reportEl.innerHTML;
       document.body.appendChild(printContainer);
 
       let exported = false;
-      if (typeof window.html2pdf === 'function') {
+      const html2pdfLib = window.html2pdf || (await import('html2pdf.js')).default;
+      if (typeof html2pdfLib === 'function') {
         try {
           const opt = {
             margin: [8, 6, 8, 6],
@@ -135,7 +166,7 @@ export default function App() {
             pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
           };
 
-          await window.html2pdf().set(opt).from(printContainer).save();
+          await html2pdfLib().set(opt).from(printContainer).save();
           exported = true;
         } catch (pdfErr) {
           console.warn('html2pdf encountered render issue, executing clean print fallback:', pdfErr);
@@ -186,11 +217,13 @@ export default function App() {
           printWindow.document.close();
         }
       }
-
-      document.body.removeChild(printContainer);
     } catch (err) {
       console.error('PDF export process error:', err);
     } finally {
+      const existingContainer = document.getElementById('clean-pdf-export-container');
+      if (existingContainer && existingContainer.parentNode) {
+        existingContainer.parentNode.removeChild(existingContainer);
+      }
       setIsExportingPDF(false);
     }
   };
@@ -215,6 +248,52 @@ export default function App() {
               </span>
             </div>
           </div>
+
+          {/* Center / Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1">
+            <button
+              onClick={() => navigateTo('/')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                currentPath === '/'
+                  ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Home className="w-3.5 h-3.5" />
+              <span>Home</span>
+            </button>
+
+            <button
+              onClick={handleStartAssessment}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+            >
+              Assessment
+            </button>
+
+            <button
+              onClick={() => {
+                if (currentPath !== '/') navigateTo('/');
+                setTimeout(() => {
+                  document.getElementById('comparison-mode-section')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+            >
+              Comparison
+            </button>
+
+            <button
+              onClick={() => navigateTo('/model-performance')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                currentPath === '/model-performance'
+                  ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold border border-sky-500/30'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Model Performance</span>
+            </button>
+          </nav>
 
           {/* Right nav items */}
           <div className="flex items-center gap-2 sm:gap-3">
@@ -265,73 +344,82 @@ export default function App() {
       </header>
 
       {/* ── Main Content ── */}
-      <main className="flex-1 pb-16 lg:pb-0">
-        {/* 1. Hero / Landing */}
-        <HeroSection onStartAssessment={handleStartAssessment} />
+      {currentPath === '/model-performance' ? (
+        <ModelPerformancePage
+          onNavigateHome={() => navigateTo('/')}
+          darkMode={darkMode}
+        />
+      ) : (
+        <main className="flex-1 pb-16 lg:pb-0">
+          {/* 1. Hero / Landing */}
+          <HeroSection onStartAssessment={handleStartAssessment} />
 
-        {/* 2. Assessment & Results Studio */}
-        <section
-          ref={assessmentRef}
-          id="assessment-section"
-          className="py-12 md:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
-        >
-          <div className="mb-8 text-center sm:text-left">
-            <h2 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${darkMode ? 'text-slate-100' : 'text-slate-900'}`}>
-              Cardiovascular Risk Evaluation Studio
-            </h2>
-            <p className={`text-xs sm:text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              3-step wizard with real-time live preview, WHO/AHA reference ranges, comorbidity cluster detection, and scenario simulation.
-            </p>
-          </div>
-
-          {/* ── Split Screen: Wizard Left, Output Right ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left: Assessment Wizard */}
-            <div className="lg:col-span-7 glass-panel-elevated p-6 sm:p-8 rounded-3xl border border-white shadow-xl">
-              <AssessmentWizard
-                inputs={inputs}
-                setInputs={handleSetInputs}
-                onCalculate={handleCalculateRisk}
-                isCalculating={isCalculating}
-                referenceRanges={referenceRanges}
-              />
+          {/* 2. Assessment & Results Studio */}
+          <section
+            ref={assessmentRef}
+            id="assessment-section"
+            className="py-12 md:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+          >
+            <div className="mb-8 text-center sm:text-left">
+              <h2 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${darkMode ? 'text-slate-100' : 'text-slate-900'}`}>
+                Cardiovascular Risk Evaluation Studio
+              </h2>
+              <p className={`text-xs sm:text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                3-step wizard with real-time live preview, WHO/AHA reference ranges, comorbidity cluster detection, and scenario simulation.
+              </p>
             </div>
 
-            {/* Right: Risk Output (sticky on desktop) */}
-            <div className="lg:col-span-5 glass-panel p-6 sm:p-7 rounded-3xl border border-white shadow-lg sticky top-24">
-              <RiskOutputCard
-                result={displayResult}
-                isCalculating={isCalculating}
-                isLive={false}
-                onPrintReport={handlePrint}
-              />
+            {/* ── Split Screen: Wizard Left, Output Right ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Left: Assessment Wizard */}
+              <div className="lg:col-span-7 glass-panel-elevated p-6 sm:p-8 rounded-3xl border border-white shadow-xl">
+                <AssessmentWizard
+                  inputs={inputs}
+                  setInputs={handleSetInputs}
+                  onCalculate={handleCalculateRisk}
+                  isCalculating={isCalculating}
+                  referenceRanges={referenceRanges}
+                />
+              </div>
+
+              {/* Right: Risk Output (sticky on desktop) */}
+              <div className="lg:col-span-5 glass-panel p-6 sm:p-7 rounded-3xl border border-white shadow-lg sticky top-24">
+                <RiskOutputCard
+                  result={displayResult}
+                  isCalculating={isCalculating}
+                  isLive={false}
+                  onPrintReport={handlePrint}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* 3. Scenario Comparison / What-If Mode */}
-          <ComparisonMode
-            currentInputs={inputs}
-            onApplyScenario={handleApplyScenario}
-          />
+            {/* 3. Scenario Comparison / What-If Mode */}
+            <ComparisonMode
+              currentInputs={inputs}
+              onApplyScenario={handleApplyScenario}
+            />
 
-          {/* 4. Engineered Physiological Parameters */}
-          <EngineeredParametersGrid features={engineeredFeatures} />
+            {/* 4. Engineered Physiological Parameters */}
+            <EngineeredParametersGrid features={engineeredFeatures} />
 
-          {/* 5. Comorbidity Cluster Detection */}
-          <ComorbidityFlags flags={comorbidityFlags} />
-        </section>
-      </main>
+            {/* 5. Comorbidity Cluster Detection */}
+            <ComorbidityFlags flags={comorbidityFlags} />
+          </section>
+        </main>
+      )}
 
       {/* 6. Mobile Bottom Sheet Drawer (< lg screens) */}
-      <MobileBottomSheet
-        isOpen={isMobileSheetOpen}
-        onClose={() => setIsMobileSheetOpen(false)}
-        onOpen={() => setIsMobileSheetOpen(true)}
-        result={displayResult}
-        isCalculating={isCalculating}
-        isLive={false}
-        onPrint={handlePrint}
-      />
+      {currentPath === '/' && (
+        <MobileBottomSheet
+          isOpen={isMobileSheetOpen}
+          onClose={() => setIsMobileSheetOpen(false)}
+          onOpen={() => setIsMobileSheetOpen(true)}
+          result={displayResult}
+          isCalculating={isCalculating}
+          isLive={false}
+          onPrint={handlePrint}
+        />
+      )}
 
       {/* 7. Hidden Clinical Printable PDF Document (revealed on window.print()) */}
       <PrintableReport

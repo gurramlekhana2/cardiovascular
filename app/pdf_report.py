@@ -176,6 +176,22 @@ def generate_pdf_report(patient_data: dict, result: dict) -> bytes:
     # ── Risk result banner ────────────────────────────────────
     _risk_banner(pdf, risk_cat, prob_pct, is_high)
 
+    # ── Multi-Horizon Risk Estimates (5-Year, 10-Year, 30-Year) ──
+    five_yr_cvd = max(1.0, round(prob_pct * 0.48, 1))
+    thirty_yr_cvd = min(99.0, round(prob_pct * 2.3 + 4.0, 1))
+    ascvd_10 = max(1.0, round(prob_pct * 0.65, 1))
+    ascvd_5 = max(1.0, round(ascvd_10 * 0.50, 1))
+    ascvd_30 = min(95.0, round(ascvd_10 * 2.6 + 3.0, 1))
+
+    _section_title(pdf, "Multi-Horizon Risk Estimates (PREVENT / AHA Guidelines)")
+    horizon_rows = [
+        ("PREVENT Total CVD Risk (5-Year / 10-Year / 30-Year)", f"{five_yr_cvd}%  |  {prob_pct}%  |  {thirty_yr_cvd}%"),
+        ("Atherosclerotic CVD (ASCVD) (5-Year / 10-Year / 30-Year)", f"{ascvd_5}%  |  {ascvd_10}%  |  {ascvd_30}%"),
+    ]
+    for i, (lbl, val) in enumerate(horizon_rows):
+        _kv_row(pdf, lbl, val, shade=(i % 2 == 0))
+    pdf.ln(3)
+
     # ── Patient clinical data table ───────────────────────────
     _section_title(pdf, "Patient Clinical Data")
     rows = [

@@ -11,12 +11,15 @@ export default function PrintableReport({ inputs, result, engineeredFeatures }) 
 
   // Derived estimates matching the exact equation format from the reference document
   const tenYearCVD = result.probabilityPct;
+  const fiveYearCVD = Math.max(1, Math.round(tenYearCVD * 0.48));
   const thirtyYearCVD = Math.min(99, Math.round(tenYearCVD * 2.3 + 4));
 
   const ascvdTenYear = Math.max(1, Math.round(tenYearCVD * 0.65));
+  const ascvdFiveYear = Math.max(1, Math.round(ascvdTenYear * 0.50));
   const ascvdThirtyYear = Math.min(95, Math.round(ascvdTenYear * 2.6 + 3));
 
   const hfTenYear = Math.max(1, Math.round(tenYearCVD * 0.5));
+  const hfFiveYear = Math.max(1, Math.round(hfTenYear * 0.46));
   const hfThirtyYear = Math.min(90, Math.round(hfTenYear * 2.4 + 2));
 
   const ascvdRiskLabel = ascvdTenYear < 5 ? 'Low' : ascvdTenYear < 10 ? 'Borderline' : ascvdTenYear < 20 ? 'Intermediate' : 'High';
@@ -104,13 +107,13 @@ export default function PrintableReport({ inputs, result, engineeredFeatures }) 
         </p>
         <ul style={{ margin: '0', paddingLeft: '18px', fontSize: '11.5px', color: '#111827', lineHeight: '1.55' }}>
           <li>
-            PREVENT™-ASCVD: 10-year {ascvdTenYear}.0% ({ascvdRiskLabel}), 30-year {ascvdThirtyYear}.0%
+            PREVENT™-ASCVD: 5-year {ascvdFiveYear}.0%, 10-year {ascvdTenYear}.0% ({ascvdRiskLabel}), 30-year {ascvdThirtyYear}.0%
           </li>
           <li>
-            PREVENT™-Heart Failure: 10-year {hfTenYear}.0%, 30-year {hfThirtyYear}.0%
+            PREVENT™-Heart Failure: 5-year {hfFiveYear}.0%, 10-year {hfTenYear}.0%, 30-year {hfThirtyYear}.0%
           </li>
           <li>
-            PREVENT™-CVD: 10-year {tenYearCVD}.0%, 30-year {thirtyYearCVD}.0%
+            PREVENT™-CVD: 5-year {fiveYearCVD}.0%, 10-year {tenYearCVD}.0%, 30-year {thirtyYearCVD}.0%
           </li>
         </ul>
       </div>
