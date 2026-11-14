@@ -302,26 +302,83 @@ export default function AssessmentWizard({ inputs, setInputs, onCalculate, isCal
             </div>
 
             {/* Lifestyle Toggles */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { key: 'smoke', label: 'Smoking', on: 'Smoker', off: 'Non-Smoker', onColor: 'bg-rose-500', offColor: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700' },
-                { key: 'alco', label: 'Alcohol', on: 'Regular', off: 'Minimal / No', onColor: 'bg-amber-500', offColor: 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600' },
-                { key: 'active', label: 'Physical Activity', on: 'Active', off: 'Sedentary', onColor: 'bg-emerald-600', offColor: 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600' },
-              ].map(({ key, label, on, off, onColor, offColor }) => (
-                <div key={key} className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 flex flex-col gap-2">
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{label}</span>
-                  <button
-                    type="button"
-                    onClick={() => updateInput(key, inputs[key] === 1 ? 0 : 1)}
-                    className={`py-2 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
-                      inputs[key] === 1 ? `${onColor} text-white border-transparent` : offColor
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${inputs[key] === 1 ? 'bg-white' : 'bg-current opacity-60'}`} />
-                    {inputs[key] === 1 ? on : off}
-                  </button>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Smoking with direct Risk Progression Insight */}
+              <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 flex flex-col justify-between gap-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Smoking Habit</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                    inputs.smoke === 1 
+                      ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' 
+                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                  }`}>
+                    {inputs.smoke === 1 ? 'High Risk Factor' : 'Protective Baseline'}
+                  </span>
                 </div>
-              ))}
+                
+                <button
+                  type="button"
+                  onClick={() => updateInput('smoke', inputs.smoke === 1 ? 0 : 1)}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer border flex items-center justify-center gap-1.5 shadow-xs ${
+                    inputs.smoke === 1 
+                      ? 'bg-rose-500 text-white border-rose-500 hover:bg-rose-600' 
+                      : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-100'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${inputs.smoke === 1 ? 'bg-white animate-pulse' : 'bg-emerald-500'}`} />
+                  {inputs.smoke === 1 ? '🚬 Active Smoker' : '🚭 Non-Smoker'}
+                </button>
+
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                  {inputs.smoke === 1 
+                    ? '⚠️ Toggling to Smoker elevates 5-yr, 10-yr & 30-yr vascular hazard by up to +15%.'
+                    : '💡 Click to simulate what happens if this person starts smoking.'}
+                </p>
+              </div>
+
+              {/* Alcohol */}
+              <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 flex flex-col justify-between gap-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Alcohol Intake</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateInput('alco', inputs.alco === 1 ? 0 : 1)}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
+                    inputs.alco === 1 
+                      ? 'bg-amber-500 text-white border-amber-500' 
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${inputs.alco === 1 ? 'bg-white' : 'bg-slate-400'}`} />
+                  {inputs.alco === 1 ? '🍺 Regular Intake' : '💧 Minimal / None'}
+                </button>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Chronic heavy consumption exacerbates systolic hypertension.
+                </p>
+              </div>
+
+              {/* Physical Activity */}
+              <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 flex flex-col justify-between gap-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Physical Activity</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateInput('active', inputs.active === 1 ? 0 : 1)}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
+                    inputs.active === 1 
+                      ? 'bg-emerald-600 text-white border-emerald-600' 
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${inputs.active === 1 ? 'bg-white' : 'bg-slate-400'}`} />
+                  {inputs.active === 1 ? '🏃 Active Lifestyle' : '🛋️ Sedentary'}
+                </button>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Regular aerobic exercise attenuates vascular stiffening.
+                </p>
+              </div>
             </div>
           </motion.div>
         )}

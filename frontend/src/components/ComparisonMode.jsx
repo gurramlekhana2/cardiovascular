@@ -93,12 +93,27 @@ export default function ComparisonMode({ currentInputs, onApplyScenario }) {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mr-1">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                Quick Clinical Interventions:
+                Simulate Habit & Factor Changes:
               </span>
               <button
                 type="button"
+                onClick={() => handlePreset({ smoke: 1 })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                  scenarioInputs.smoke === 1
+                    ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                    : 'bg-white dark:bg-slate-800 border-rose-200 dark:border-rose-900/60 hover:border-rose-500 text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                🚬 Start / Increase Smoking
+              </button>
+              <button
+                type="button"
                 onClick={() => handlePreset({ smoke: 0 })}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-sky-500 text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                  scenarioInputs.smoke === 0
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-slate-700 dark:text-slate-200'
+                }`}
               >
                 🚭 Smoking Cessation
               </button>
@@ -107,21 +122,28 @@ export default function ComparisonMode({ currentInputs, onApplyScenario }) {
                 onClick={() => handlePreset({ active: 1 })}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-sky-500 text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
               >
-                🏃 Regular Physical Activity
+                🏃 Physical Activity
               </button>
               <button
                 type="button"
                 onClick={() => handlePreset({ ap_hi: Math.min(scenarioInputs.ap_hi, 120), ap_lo: Math.min(scenarioInputs.ap_lo, 80) })}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-sky-500 text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
               >
-                🩺 Normalize Blood Pressure (&le;120/80)
+                🩺 Normalize BP (&le;120/80)
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePreset({ ap_hi: Math.max(scenarioInputs.ap_hi, 145), ap_lo: Math.max(scenarioInputs.ap_lo, 95) })}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-white dark:bg-slate-800 border-amber-200 dark:border-amber-900/50 hover:border-amber-500 text-amber-600 dark:text-amber-400 transition-all cursor-pointer"
+              >
+                ⚠️ Escalate to Hypertension
               </button>
               <button
                 type="button"
                 onClick={() => handlePreset({ cholesterol: 1, gluc: 1 })}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-sky-500 text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
               >
-                🥗 Optimize Lipids & Glucose
+                🥗 Optimize Biomarkers
               </button>
               <button
                 type="button"
@@ -273,6 +295,64 @@ export default function ComparisonMode({ currentInputs, onApplyScenario }) {
                     onChange={(e) => setScenarioInputs(prev => ({ ...prev, weight: Number(e.target.value) }))}
                     className="w-full"
                   />
+                </div>
+
+                {/* Smoking Habit Toggle */}
+                <div>
+                  <div className="flex justify-between font-medium mb-1">
+                    <span className="text-slate-600 dark:text-slate-400">Smoking Habit:</span>
+                    <span className={`font-bold ${scenarioInputs.smoke ? 'text-rose-600' : 'text-emerald-600'}`}>
+                      {scenarioInputs.smoke ? 'Active Smoker' : 'Non-Smoker'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setScenarioInputs(prev => ({ ...prev, smoke: prev.smoke === 1 ? 0 : 1 }))}
+                    className={`w-full py-1.5 px-3 rounded-lg border font-semibold text-xs transition-all cursor-pointer ${
+                      scenarioInputs.smoke === 1
+                        ? 'bg-rose-500 text-white border-rose-500'
+                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300'
+                    }`}
+                  >
+                    {scenarioInputs.smoke === 1 ? '🚬 Active Smoker (Click to Stop)' : '🚭 Non-Smoker (Click to Start)'}
+                  </button>
+                </div>
+
+                {/* Multi-Horizon Risk Comparison (5-Yr, 10-Yr, 30-Yr) */}
+                <div className="sm:col-span-2 lg:col-span-4 mt-2 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
+                  <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider flex items-center justify-between">
+                    <span>Dynamic Multi-Horizon Impact Projection</span>
+                    <span className="text-[10px] lowercase text-slate-400">5-yr vs 10-yr vs 30-yr</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                      <div className="text-[10px] text-slate-500">5-Year Risk</div>
+                      <div className="text-xs font-semibold text-slate-400 line-through">
+                        {Math.max(1, Math.round(baseResult.probabilityPct * 0.48))}%
+                      </div>
+                      <div className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400">
+                        {Math.max(1, Math.round(scenResult.probabilityPct * 0.48))}%
+                      </div>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                      <div className="text-[10px] text-slate-500">10-Year Risk</div>
+                      <div className="text-xs font-semibold text-slate-400 line-through">
+                        {baseResult.probabilityPct}%
+                      </div>
+                      <div className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400">
+                        {scenResult.probabilityPct}%
+                      </div>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                      <div className="text-[10px] text-slate-500">30-Year Risk</div>
+                      <div className="text-xs font-semibold text-slate-400 line-through">
+                        {Math.min(99, Math.round(baseResult.probabilityPct * 2.3 + 4))}%
+                      </div>
+                      <div className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400">
+                        {Math.min(99, Math.round(scenResult.probabilityPct * 2.3 + 4))}%
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Apply button */}
