@@ -246,7 +246,6 @@ export default function RiskOutputCard({ result, isCalculating, isLive, onPrintR
         </div>
       </div>
 
-
       {/* SHAP Feature Contribution Chart */}
       <div className="p-4 rounded-2xl bg-white/90 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700 shadow-xs">
         <div className="flex items-center justify-between mb-3">
