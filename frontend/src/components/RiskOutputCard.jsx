@@ -53,6 +53,9 @@ function useCountUp(target, duration = 900) {
 }
 
 export default function RiskOutputCard({ result, isCalculating, isLive, onPrintReport }) {
+  const probabilityPct = result?.probabilityPct ?? 0;
+  const animatedPct = useCountUp(probabilityPct);
+
   if (isCalculating) {
     return (
       <div className="flex flex-col items-center justify-center p-12 min-h-[460px] text-center">
@@ -103,7 +106,7 @@ export default function RiskOutputCard({ result, isCalculating, isLive, onPrintR
     );
   }
 
-  const { probabilityPct, riskLevel, riskColor, riskSummary, featureContributions, recommendations } = result;
+  const { riskLevel, riskColor, riskSummary, featureContributions, recommendations } = result;
 
   const colorStyles = {
     emerald: {
@@ -145,9 +148,6 @@ export default function RiskOutputCard({ result, isCalculating, isLive, onPrintR
   const radius = 64;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (probabilityPct / 100) * circumference;
-
-  // Animated counter
-  const animatedPct = useCountUp(probabilityPct);
 
   return (
     <motion.div

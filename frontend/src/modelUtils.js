@@ -225,78 +225,47 @@ export function detectComorbidityFlags(inputs) {
   return flags;
 }
 
-export function computeRiskAssessment(inputs) {
-  const { bmi, pulsePressure, map } = calculatePhysiologicalFeatures(inputs);
+// ─── Production ML Model Prediction via REST API ────────────────────────────
+// Connects directly to the trained LightGBM model pipeline (models/final_model.pkl)
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
-  // Baseline calibrated log-odds score modeled after the trained cardiovascular ensemble
-  let logOdds = -2.85;
-
-  logOdds += (inputs.age - 50) * 0.048;
-
-  if (inputs.ap_hi > 120) {
-    logOdds += ((inputs.ap_hi - 120) / 10) * 0.28;
-  } else {
-    logOdds -= ((120 - inputs.ap_hi) / 10) * 0.12;
+export async function fetchModelPrediction(inputs) {
+  // Explicit client validation
+  if (inputs.ap_hi <= inputs.ap_lo) {
+    throw new Error(`Systolic blood pressure (${inputs.ap_hi} mmHg) must be greater than diastolic (${inputs.ap_lo} mmHg).`);
   }
 
-  if (inputs.ap_lo > 80) {
-    logOdds += ((inputs.ap_lo - 80) / 10) * 0.16;
+  const payload = {
+    age: Number(inputs.age),
+    gender: Number(inputs.gender),
+    height: Number(inputs.height),
+    weight: Number(inputs.weight),
+    ap_hi: Number(inputs.ap_hi),
+    ap_lo: Number(inputs.ap_lo),
+    cholesterol: Number(inputs.cholesterol),
+    gluc: Number(inputs.gluc),
+    smoke: Number(inputs.smoke),
+    alco: Number(inputs.alco),
+    active: Number(inputs.active)
+  };
+
+  const response = await fetch(`${API_BASE_URL}/predict`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Prediction API error (Status ${response.status})`);
   }
 
-  if (inputs.cholesterol === 2) logOdds += 0.42;
-  if (inputs.cholesterol === 3) logOdds += 0.88;
+  const data = await response.json();
 
-  if (inputs.gluc === 2) logOdds += 0.25;
-  if (inputs.gluc === 3) logOdds += 0.52;
-
-  if (inputs.smoke === 1) logOdds += 0.38;
-  if (inputs.alco === 1) logOdds += 0.18;
-  if (inputs.active === 0) logOdds += 0.34;
-
-  if (bmi > 25) {
-    logOdds += ((bmi - 25) / 5) * 0.24;
-  }
-
-  if (pulsePressure > 50) {
-    logOdds += ((pulsePressure - 50) / 10) * 0.15;
-  }
-
-  // Gender: 1=Female, 2=Male, 3=Other (treated same as female for model baseline)
-  if (inputs.gender === 2) logOdds += 0.08;
-
-  const probability = 1 / (1 + Math.exp(-logOdds));
-  const probabilityPct = Math.round(Math.min(96, Math.max(4, probability * 100)));
-
-  let riskLevel = "Low Risk";
-  let riskColor = "emerald";
-  let riskSummary = "Healthy cardiovascular probability. Low clinical markers detected.";
-
-  if (probabilityPct >= 60) {
-    riskLevel = "High Risk";
-    riskColor = "rose";
-    riskSummary = "Markedly elevated cardiovascular risk indicators. Physician consultation recommended.";
-  } else if (probabilityPct >= 30) {
-    riskLevel = "Moderate Risk";
-    riskColor = "amber";
-    riskSummary = "Borderline clinical parameters detected. Lifestyle modification advised.";
-  }
-
-  const bpImpact = Math.round(((inputs.ap_hi - 120) * 0.25 + (inputs.ap_lo - 80) * 0.15));
-  const ageImpact = Math.round((inputs.age - 45) * 0.35);
-  const cholImpact = inputs.cholesterol === 3 ? 14 : (inputs.cholesterol === 2 ? 7 : -4);
-  const lifestyleImpact = (inputs.smoke ? 10 : -4) + (inputs.active ? -8 : 6);
-  const bmiImpact = bmi > 25 ? Math.round((bmi - 25) * 1.2) : -3;
-  const glucImpact = inputs.gluc === 3 ? 9 : (inputs.gluc === 2 ? 4 : -2);
-
-  const featureContributions = [
-    { feature: "Blood Pressure (Systolic/Diastolic)", impact: bpImpact, category: "Vitals" },
-    { feature: "Age Demographics", impact: ageImpact, category: "Demographics" },
-    { feature: "Serum Cholesterol", impact: cholImpact, category: "Biomarkers" },
-    { feature: "Lifestyle (Smoking/Activity)", impact: lifestyleImpact, category: "Lifestyle" },
-    { feature: "Body Mass Index (BMI)", impact: bmiImpact, category: "Anthropometrics" },
-    { feature: "Fasting Blood Glucose", impact: glucImpact, category: "Biomarkers" },
-  ].sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
-
+  // Recommendations based on clinical parameters
+  const { bmi } = calculatePhysiologicalFeatures(inputs);
   const recommendations = [];
   if (inputs.ap_hi >= 130 || inputs.ap_lo >= 85) {
     recommendations.push({
@@ -333,7 +302,6 @@ export function computeRiskAssessment(inputs) {
       type: "info"
     });
   }
-
   if (recommendations.length < 3) {
     recommendations.push({
       title: "Routine Longitudinal Surveillance",
@@ -343,11 +311,7 @@ export function computeRiskAssessment(inputs) {
   }
 
   return {
-    probabilityPct,
-    riskLevel,
-    riskColor,
-    riskSummary,
-    featureContributions,
-    recommendations,
+    ...data,
+    recommendations
   };
 }

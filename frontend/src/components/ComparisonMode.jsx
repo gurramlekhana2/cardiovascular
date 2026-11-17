@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeftRight,
@@ -12,37 +12,66 @@ import {
   RotateCcw,
   Sliders
 } from 'lucide-react';
-import { computeRiskAssessment } from '../modelUtils';
+import { fetchModelPrediction } from '../modelUtils';
 
 export default function ComparisonMode({ currentInputs, onApplyScenario }) {
   const [isOpen, setIsOpen] = useState(false);
   const [baselineInputs, setBaselineInputs] = useState(null);
   const [scenarioInputs, setScenarioInputs] = useState(null);
+  const [baseResult, setBaseResult] = useState(null);
+  const [scenResult, setScenResult] = useState(null);
+  const [isComparing, setIsComparing] = useState(false);
 
   // Initialize or lock baseline
-  const handleLockBaseline = () => {
+  const handleLockBaseline = async () => {
     setBaselineInputs({ ...currentInputs });
     setScenarioInputs({ ...currentInputs });
-  };
-
-  const handleResetComparison = () => {
-    setBaselineInputs({ ...currentInputs });
-    setScenarioInputs({ ...currentInputs });
-  };
-
-  // Preset quick intervention triggers
-  const handlePreset = (changes) => {
-    if (!baselineInputs) {
-      setBaselineInputs({ ...currentInputs });
-      setScenarioInputs({ ...currentInputs, ...changes });
-    } else {
-      setScenarioInputs(prev => ({ ...prev, ...changes }));
+    setIsComparing(true);
+    try {
+      const res = await fetchModelPrediction(currentInputs);
+      setBaseResult(res);
+      setScenResult(res);
+    } catch (err) {
+      console.error('Comparison baseline prediction error:', err);
+    } finally {
+      setIsComparing(false);
     }
   };
 
-  // Compute assessments if baseline set
-  const baseResult = baselineInputs ? computeRiskAssessment(baselineInputs) : null;
-  const scenResult = scenarioInputs ? computeRiskAssessment(scenarioInputs) : null;
+  const handleResetComparison = async () => {
+    setScenarioInputs({ ...currentInputs });
+    setIsComparing(true);
+    try {
+      const res = await fetchModelPrediction(currentInputs);
+      setScenResult(res);
+    } catch (err) {
+      console.error('Reset scenario prediction error:', err);
+    } finally {
+      setIsComparing(false);
+    }
+  };
+
+  // Preset quick intervention triggers
+  const handlePreset = async (changes) => {
+    const updated = scenarioInputs ? { ...scenarioInputs, ...changes } : { ...currentInputs, ...changes };
+    if (!baselineInputs) {
+      setBaselineInputs({ ...currentInputs });
+    }
+    setScenarioInputs(updated);
+    setIsComparing(true);
+    try {
+      const [resBase, resScen] = await Promise.all([
+        baseResult ? Promise.resolve(baseResult) : fetchModelPrediction(currentInputs),
+        fetchModelPrediction(updated)
+      ]);
+      setBaseResult(resBase);
+      setScenResult(resScen);
+    } catch (err) {
+      console.error('Scenario preset prediction error:', err);
+    } finally {
+      setIsComparing(false);
+    }
+  };
 
   const deltaPct = baseResult && scenResult ? scenResult.probabilityPct - baseResult.probabilityPct : 0;
 

@@ -10,11 +10,11 @@ import MobileBottomSheet from './components/MobileBottomSheet';
 import PrintableReport from './components/PrintableReport';
 import {
   calculatePhysiologicalFeatures,
-  computeRiskAssessment,
+  fetchModelPrediction,
   getReferenceRanges,
   detectComorbidityFlags,
 } from './modelUtils';
-import { Activity, ShieldCheck, Heart, Moon, Sun, Printer, Download } from 'lucide-react';
+import { Activity, ShieldCheck, Heart, Moon, Sun, Printer, Download, AlertCircle } from 'lucide-react';
 
 const DEFAULT_INPUTS = {
   age: 52,
@@ -51,8 +51,9 @@ export default function App() {
   // ── Mobile Bottom Sheet state ─────────────────────────────────────────────
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
 
-  // ── Assessment results (initially null until the user calculates) ─────────
+  // ── Assessment results & error state ─────────────────────────────────────
   const [assessmentResult, setAssessmentResult] = useState(null);
+  const [apiError, setApiError] = useState(null);
 
   // Displayed result: only populated after user initiates calculation
   const displayResult = assessmentResult;
@@ -67,16 +68,22 @@ export default function App() {
     assessmentRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleCalculateRisk = () => {
+  const handleCalculateRisk = async () => {
     setIsCalculating(true);
-    setTimeout(() => {
-      setAssessmentResult(computeRiskAssessment(inputs));
-      setIsCalculating(false);
-      // Auto open bottom sheet on small screens when user clicks Calculate
+    setApiError(null);
+    try {
+      const result = await fetchModelPrediction(inputs);
+      setAssessmentResult(result);
       if (window.innerWidth < 1024) {
         setIsMobileSheetOpen(true);
       }
-    }, 600);
+    } catch (err) {
+      console.error('API prediction error:', err);
+      setApiError(err.message || 'Unable to connect to the prediction server. Please verify the backend API is running.');
+      setAssessmentResult(null);
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   // ── Input change: if already calculated, refresh result smoothly or keep current ────
@@ -85,10 +92,19 @@ export default function App() {
   }, []);
 
   // ── Apply Scenario from Comparison Mode ─────────────────────────────────
-  const handleApplyScenario = (scenarioInputs) => {
+  const handleApplyScenario = async (scenarioInputs) => {
     setInputs(scenarioInputs);
-    setAssessmentResult(computeRiskAssessment(scenarioInputs));
-    assessmentRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setApiError(null);
+    setIsCalculating(true);
+    try {
+      const result = await fetchModelPrediction(scenarioInputs);
+      setAssessmentResult(result);
+      assessmentRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      setApiError(err.message || 'Scenario prediction failed: Backend API connection error.');
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   // ── Automatic PDF Download Handler ──────────────────────────────────────
@@ -303,6 +319,18 @@ export default function App() {
 
             {/* Right: Risk Output (sticky on desktop) */}
             <div className="lg:col-span-5 glass-panel p-6 sm:p-7 rounded-3xl border border-white shadow-lg sticky top-24">
+              {apiError && (
+                <div className="mb-4 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 flex items-start gap-3 text-xs leading-relaxed shadow-sm">
+                  <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block mb-0.5">Prediction Server Connection Error</span>
+                    {apiError}
+                    <div className="mt-1.5 text-[11px] text-rose-600 dark:text-rose-400 font-mono bg-rose-100/60 dark:bg-rose-900/40 p-1.5 rounded-lg">
+                      Backend command: uvicorn app.api:app --reload --port 8000
+                    </div>
+                  </div>
+                </div>
+              )}
               <RiskOutputCard
                 result={displayResult}
                 isCalculating={isCalculating}

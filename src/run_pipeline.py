@@ -77,14 +77,15 @@ def execute_full_pipeline():
     print(f"\n--- PHASE 7: SERIALIZING FINAL MODEL ({best_model_name}) ---")
     final_model = best_estimators[best_model_name]
 
-    # Calculate optimal threshold on test/val set
-    if hasattr(final_model, "predict_proba"):
-        y_test_probs = final_model.predict_proba(X_test)[:, 1]
-    else:
-        y_test_probs = final_model.decision_function(X_test)
+    # Calculate optimal threshold strictly using 5-fold Out-Of-Fold (OOF) cross-validation
+    # on the training data (Zero Test Set Leakage)
+    from sklearn.model_selection import StratifiedKFold, cross_val_predict
     from src.train import compute_optimal_threshold
-    optimal_threshold = compute_optimal_threshold(y_test, y_test_probs)
-    print(f"Computed Clinical Optimal Threshold (Youden's J): {optimal_threshold:.3f}")
+    cv_oof = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    print("Computing out-of-fold predictions on training set for threshold calibration...")
+    oof_train_probs = cross_val_predict(final_model, X_train, y_train, cv=cv_oof, method='predict_proba', n_jobs=-1)[:, 1]
+    optimal_threshold = compute_optimal_threshold(y_train, oof_train_probs)
+    print(f"Computed Clinical Optimal Threshold (OOF Youden's J): {optimal_threshold:.4f}")
 
     model_save_path = os.path.join(MODELS_DIR, "final_model.pkl")
     metadata_save_path = os.path.join(MODELS_DIR, "model_metadata.joblib")

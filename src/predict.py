@@ -32,12 +32,12 @@ class CardiovascularRiskPredictor:
             raise FileNotFoundError(f"Model file not found at {model_file}. Run run_pipeline.py first.")
         self.model = joblib.load(model_file)
 
-        # Load metadata if available, else default to clinically cautious 0.45 threshold
-        self.optimal_threshold = 0.45
+        # Load metadata if available, defaulting to the OOF-calibrated 0.4839 threshold
+        self.optimal_threshold = 0.4839
         if os.path.exists(METADATA_PATH):
             try:
                 meta = joblib.load(METADATA_PATH)
-                self.optimal_threshold = meta.get('optimal_threshold', 0.45)
+                self.optimal_threshold = float(meta.get('optimal_threshold', 0.4839))
             except Exception:
                 pass
 
