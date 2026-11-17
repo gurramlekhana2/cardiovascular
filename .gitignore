@@ -25,9 +25,15 @@ frontend/dist/
 .env.*
 !.env.example
 
-# Data directory large files (>100MB cannot be pushed to GitHub)
-data/raw/*.csv
-data/processed/*.csv
+# Data directory: ignore large ECG files (>100MB exceeds GitHub limits)
+data/raw/mitbih_*.csv
+data/raw/ptbdb_*.csv
+
+# Allow cardiovascular disease datasets
+!data/raw/cardio_train.csv
+!data/raw/new_dataset.csv
+!data/processed/train_cleaned.csv
+!data/processed/test_cleaned.csv
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 
