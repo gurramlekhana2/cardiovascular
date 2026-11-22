@@ -8,6 +8,7 @@ import ComorbidityFlags from './components/ComorbidityFlags';
 import ComparisonMode from './components/ComparisonMode';
 import MobileBottomSheet from './components/MobileBottomSheet';
 import PrintableReport from './components/PrintableReport';
+import ECGArrhythmiaStudio from './components/ECGArrhythmiaStudio';
 import {
   calculatePhysiologicalFeatures,
   fetchModelPrediction,
@@ -243,6 +244,18 @@ export default function App() {
               <span>No Login Required</span>
             </div>
 
+            <a
+              href="#ecg-module"
+              className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                darkMode
+                  ? 'bg-cyan-950/40 text-cyan-400 border-cyan-800 hover:bg-cyan-900/50'
+                  : 'bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5 text-cyan-400" />
+              <span>ECG Studio (MIT-BIH)</span>
+            </a>
+
             {/* Print / Download PDF button in header */}
             <button
               onClick={handlePrint}
@@ -351,10 +364,13 @@ export default function App() {
 
           {/* 5. Comorbidity Cluster Detection */}
           <ComorbidityFlags flags={comorbidityFlags} />
+
+          {/* 6. Module 2: AI-Powered ECG Arrhythmia Detection Studio */}
+          <ECGArrhythmiaStudio />
         </section>
       </main>
 
-      {/* 6. Mobile Bottom Sheet Drawer (< lg screens) */}
+      {/* 7. Mobile Bottom Sheet Drawer (< lg screens) */}
       <MobileBottomSheet
         isOpen={isMobileSheetOpen}
         onClose={() => setIsMobileSheetOpen(false)}

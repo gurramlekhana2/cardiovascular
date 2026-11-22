@@ -315,3 +315,66 @@ export async function fetchModelPrediction(inputs) {
     recommendations
   };
 }
+
+// ─── Module 2: ECG Arrhythmia Detection API Helpers ─────────────────────────
+
+export async function fetchECGMetrics() {
+  const response = await fetch(`${API_BASE_URL}/ecg/metrics`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to fetch ECG metrics (${response.status})`);
+  }
+  return await response.json();
+}
+
+export async function fetchECGDemoSamples() {
+  const response = await fetch(`${API_BASE_URL}/ecg/demo-samples`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to fetch ECG demo samples (${response.status})`);
+  }
+  return await response.json();
+}
+
+export async function analyzeECGSignal(signalArray, sampleId = "Manual ECG Input") {
+  if (!Array.isArray(signalArray) || signalArray.length < 10) {
+    throw new Error("Invalid ECG signal data. Array must contain at least 10 numerical amplitude points.");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/ecg/predict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      signal: signalArray.map(Number),
+      sample_id: sampleId
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `ECG analysis error (${response.status})`);
+  }
+
+  return await response.json();
+}
+
+export async function uploadAndAnalyzeECGFile(file) {
+  if (!file) {
+    throw new Error("No file provided for upload.");
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}/ecg/upload`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `ECG file upload error (${response.status})`);
+  }
+
+  return await response.json();
+}
