@@ -6,8 +6,48 @@ import {
   HeartPulse,
   HelpCircle,
   TrendingUp,
-  Info
+  Info,
+  CheckCircle2,
+  Activity
 } from 'lucide-react';
+
+const CLINICAL_RISK_CONFIG = {
+  N: {
+    level: "Low Risk — Normal Sinus Rhythm",
+    badgeClass: "bg-emerald-950/70 border-emerald-700/60 text-emerald-300",
+    icon: CheckCircle2,
+    summary: "Waveform demonstrates standard P-QRS-T sequence with regular conduction velocity and zero ectopic cardiac markers.",
+    action: "Normal physiological sinus impulse. No acute intervention indicated; maintain routine cardiovascular surveillance."
+  },
+  S: {
+    level: "Moderate Risk — Supraventricular Ectopic Focus",
+    badgeClass: "bg-amber-950/70 border-amber-700/60 text-amber-300",
+    icon: AlertTriangle,
+    summary: "Premature atrial or junctional depolarization identified outside the sinus node. Morphologically narrow QRS with displaced P-wave.",
+    action: "Evaluate for emotional stress, caffeine/stimulants, electrolyte shifts, or paroxysmal supraventricular tachycardia (PSVT)."
+  },
+  V: {
+    level: "Elevated Risk — Ventricular Ectopic Beat (VEB / PVC)",
+    badgeClass: "bg-rose-950/70 border-rose-700/60 text-rose-300",
+    icon: AlertOctagon,
+    summary: "Premature ventricular contraction with characteristic wide, slurred QRS complex (>120 ms) and secondary T-wave discordance.",
+    action: "Correlate with 24-48 hour continuous Holter recording, serum electrolytes (K+, Mg2+), and assess structural heart disease."
+  },
+  F: {
+    level: "Moderate-High Risk — Ventricular Fusion Morphology",
+    badgeClass: "bg-purple-950/70 border-purple-700/60 text-purple-300",
+    icon: Activity,
+    summary: "Synchronous co-activation of ventricular myocardium by descending supraventricular conduction and an active ectopic focus.",
+    action: "Indicates competitive ventricular focus. Recommend clinical electrophysiology consultation and 12-lead diagnostic tracing."
+  },
+  Q: {
+    level: "Diagnostic Review Required — Unclassified / Distorted Morphology",
+    badgeClass: "bg-sky-950/70 border-sky-700/60 text-sky-300",
+    icon: HelpCircle,
+    summary: "Atypical or non-conforming waveform configuration (frequently associated with artificial pacemakers, baseline wander, or motion artifact).",
+    action: "Confirm electrode impedance, check for implanted cardiac pacing devices, and re-acquire recording under resting conditions."
+  }
+};
 
 const BADGE_THEMES = {
   emerald: {
@@ -246,6 +286,39 @@ export default function ECGClassificationResults({
           })}
         </div>
       </div>
+
+      {/* Dynamic Clinical Risk Stratification Card */}
+      {(() => {
+        const riskMeta = CLINICAL_RISK_CONFIG[predicted_class_code] || CLINICAL_RISK_CONFIG.N;
+        const RiskIcon = riskMeta.icon;
+
+        return (
+          <div className={`p-4 rounded-xl border ${riskMeta.badgeClass} backdrop-blur-sm transition-all shadow-md`}>
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-black/30 border border-white/10 shrink-0 mt-0.5">
+                <RiskIcon className="w-5 h-5" />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-sm font-bold tracking-tight">
+                    {riskMeta.level}
+                  </h4>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/40 border border-white/10">
+                    Class {predicted_class_code} Assessment
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {riskMeta.summary}
+                </p>
+                <div className="pt-2 border-t border-white/10 text-[11px] text-slate-200">
+                  <strong className="text-white">Recommended Clinical Direction: </strong>
+                  {riskMeta.action}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
