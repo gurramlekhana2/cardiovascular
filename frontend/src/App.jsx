@@ -40,6 +40,9 @@ export default function App() {
     catch { return false; }
   });
 
+  // ── ECG Module 2 Prediction State for Multi-Page PDF ────────────────────
+  const [ecgPrediction, setEcgPrediction] = useState(null);
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
     try { localStorage.setItem('cardiosense-dark', darkMode); } catch {}
@@ -366,7 +369,7 @@ export default function App() {
           <ComorbidityFlags flags={comorbidityFlags} />
 
           {/* 6. Module 2: AI-Powered ECG Arrhythmia Detection Studio */}
-          <ECGArrhythmiaStudio />
+          <ECGArrhythmiaStudio onECGPredictionChange={setEcgPrediction} />
         </section>
       </main>
 
@@ -387,6 +390,7 @@ export default function App() {
         result={displayResult}
         engineeredFeatures={engineeredFeatures}
         comorbidityFlags={comorbidityFlags}
+        ecgPrediction={ecgPrediction}
       />
 
       {/* 8. Elegant Disclaimer Footer */}

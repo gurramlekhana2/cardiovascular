@@ -26,7 +26,7 @@ import {
 } from '../modelUtils';
 import { STATIC_DEMO_SAMPLES, STATIC_METRICS } from '../ecgStaticData';
 
-export default function ECGArrhythmiaStudio() {
+export default function ECGArrhythmiaStudio({ onECGPredictionChange }) {
   const [activeTab, setActiveTab] = useState('demo'); // 'demo' | 'upload' | 'performance' | 'methodology'
 
   // Data states (instantly available from pre-bundled static data for zero loading lag)
@@ -44,6 +44,13 @@ export default function ECGArrhythmiaStudio() {
   const [prediction, setPrediction] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Notify parent of ECG prediction changes for PDF generation
+  useEffect(() => {
+    if (onECGPredictionChange && prediction) {
+      onECGPredictionChange(prediction);
+    }
+  }, [prediction, onECGPredictionChange]);
 
   // Optional background fetch to sync any live server updates without blocking UI
   useEffect(() => {
