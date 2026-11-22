@@ -85,10 +85,29 @@ export default function ECGClassificationResults({
     clinical_meaning,
     clinical_risk_indicator,
     confidence_pct,
-    class_probabilities = [],
+    class_probabilities: rawProbabilities,
     recording_info = {},
     disclaimer = ""
   } = prediction;
+
+  // Normalize class_probabilities so it is always a safe iterable Array
+  let class_probabilities = [];
+  if (Array.isArray(rawProbabilities)) {
+    class_probabilities = rawProbabilities;
+  } else if (rawProbabilities && typeof rawProbabilities === 'object') {
+    class_probabilities = Object.entries(rawProbabilities).map(([key, val], idx) => {
+      const codeMatch = key.match(/\(([NSVFQ])\)/);
+      const code = codeMatch ? codeMatch[1] : (['N', 'S', 'V', 'F', 'Q'][idx] || 'N');
+      const prob = typeof val === 'number' ? val : (parseFloat(val) || 0);
+      return {
+        class_index: idx,
+        class_code: code,
+        class_name: key,
+        probability: prob,
+        probability_pct: Number((prob * 100).toFixed(2))
+      };
+    });
+  }
 
   const currentTheme = BADGE_THEMES[prediction.badge_color] || BADGE_THEMES.sky;
 

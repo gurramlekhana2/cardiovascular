@@ -423,11 +423,51 @@ export function clientSideECGClassification(signalArray, sourceName = "Client Si
   const baseProbs = bestSample.model_probabilities || [0.95, 0.02, 0.01, 0.01, 0.01];
   const confidence = baseProbs[predIdx] || 0.95;
 
+  // Return class probabilities as an Array of objects (matching backend format)
+  const classProbabilitiesList = [
+    {
+      class_index: 0,
+      class_code: "N",
+      class_name: "Normal Beat",
+      probability: Number(baseProbs[0].toFixed(4)),
+      probability_pct: Number((baseProbs[0] * 100).toFixed(2))
+    },
+    {
+      class_index: 1,
+      class_code: "S",
+      class_name: "Supraventricular Ectopic Beat (SVEB)",
+      probability: Number(baseProbs[1].toFixed(4)),
+      probability_pct: Number((baseProbs[1] * 100).toFixed(2))
+    },
+    {
+      class_index: 2,
+      class_code: "V",
+      class_name: "Ventricular Ectopic Beat (VEB / PVC)",
+      probability: Number(baseProbs[2].toFixed(4)),
+      probability_pct: Number((baseProbs[2] * 100).toFixed(2))
+    },
+    {
+      class_index: 3,
+      class_code: "F",
+      class_name: "Fusion Beat",
+      probability: Number(baseProbs[3].toFixed(4)),
+      probability_pct: Number((baseProbs[3] * 100).toFixed(2))
+    },
+    {
+      class_index: 4,
+      class_code: "Q",
+      class_name: "Unknown / Unclassifiable Beat",
+      probability: Number(baseProbs[4].toFixed(4)),
+      probability_pct: Number((baseProbs[4] * 100).toFixed(2))
+    }
+  ];
+
   return {
     source: `Client-Side Engine (${sourceName})`,
     recording_info: {
+      filename: sourceName,
       input_sample_count: signalArray.length,
-      processed_point_count: 187,
+      processed_samples_count: 187,
       sampling_rate_hz: 360,
       classification_standard: "AAMI EC57 (5 Heartbeat Classes)",
       lead_profile: "Ambulatory Modified Limb / Precordial Lead",
@@ -441,13 +481,7 @@ export function clientSideECGClassification(signalArray, sourceName = "Client Si
     badge_color: meta.badge,
     confidence: Number(confidence.toFixed(4)),
     confidence_pct: Number((confidence * 100).toFixed(2)),
-    class_probabilities: {
-      "Normal Beat (N)": baseProbs[0] || 0.0,
-      "Supraventricular Ectopic Beat (S)": baseProbs[1] || 0.0,
-      "Ventricular Ectopic Beat (V / PVC)": baseProbs[2] || 0.0,
-      "Fusion Beat (F)": baseProbs[3] || 0.0,
-      "Unknown / Unclassifiable Beat (Q)": baseProbs[4] || 0.0,
-    },
+    class_probabilities: classProbabilitiesList,
     processed_waveform: normalized,
     disclaimer: "Predicted via client-side signal template correlation with authentic MIT-BIH Arrhythmia Database test heartbeats."
   };
