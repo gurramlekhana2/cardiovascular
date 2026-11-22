@@ -246,14 +246,6 @@ export default function ECGClassificationResults({
           })}
         </div>
       </div>
-
-      {/* Academic Disclaimer Box */}
-      {disclaimer && (
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400 leading-relaxed">
-          <p className="font-semibold text-slate-300 mb-0.5">Faculty & Clinical Evaluation Disclaimer:</p>
-          <p>{disclaimer}</p>
-        </div>
-      )}
     </div>
   );
 }
