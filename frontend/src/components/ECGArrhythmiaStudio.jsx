@@ -24,57 +24,48 @@ import {
   analyzeECGSignal,
   uploadAndAnalyzeECGFile
 } from '../modelUtils';
+import { STATIC_DEMO_SAMPLES, STATIC_METRICS } from '../ecgStaticData';
 
 export default function ECGArrhythmiaStudio() {
   const [activeTab, setActiveTab] = useState('demo'); // 'demo' | 'upload' | 'performance' | 'methodology'
 
-  // Data states
-  const [demoSamples, setDemoSamples] = useState([]);
-  const [activeSample, setActiveSample] = useState(null);
-  const [metrics, setMetrics] = useState(null);
+  // Data states (instantly available from pre-bundled static data for zero loading lag)
+  const [demoSamples, setDemoSamples] = useState(STATIC_DEMO_SAMPLES || []);
+  const [activeSample, setActiveSample] = useState(STATIC_DEMO_SAMPLES?.[0] || null);
+  const [metrics, setMetrics] = useState(STATIC_METRICS || null);
 
   // Analysis & Display states
-  const [activeSignal, setActiveSignal] = useState([]);
-  const [waveformTitle, setWaveformTitle] = useState("MIT-BIH Electrocardiogram Waveform");
+  const [activeSignal, setActiveSignal] = useState(STATIC_DEMO_SAMPLES?.[0]?.signal || []);
+  const [waveformTitle, setWaveformTitle] = useState(
+    STATIC_DEMO_SAMPLES?.[0]
+      ? `Sample #${STATIC_DEMO_SAMPLES[0].row_in_test}: ${STATIC_DEMO_SAMPLES[0].label}`
+      : "MIT-BIH Electrocardiogram Waveform"
+  );
   const [prediction, setPrediction] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load demo samples and metrics on mount
+  // Optional background fetch to sync any live server updates without blocking UI
   useEffect(() => {
-    async function loadInitialECGData() {
+    async function syncServerECGData() {
       try {
         const [demoData, metricsData] = await Promise.all([
-          fetchECGDemoSamples().catch((e) => {
-            console.warn("Demo samples error:", e);
-            return { samples: [] };
-          }),
-          fetchECGMetrics().catch((e) => {
-            console.warn("Metrics error:", e);
-            return null;
-          })
+          fetchECGDemoSamples().catch(() => null),
+          fetchECGMetrics().catch(() => null)
         ]);
 
         if (demoData?.samples?.length > 0) {
           setDemoSamples(demoData.samples);
-          const firstSample = demoData.samples[0];
-          setActiveSample(firstSample);
-          setActiveSignal(firstSample.signal);
-          setWaveformTitle(`Sample #${firstSample.row_in_test}: ${firstSample.label}`);
-
-          // Trigger initial automated inference on first sample
-          handleAnalyzeSignal(firstSample.signal, `MIT-BIH Test Sample #${firstSample.row_in_test}`);
         }
-
         if (metricsData) {
           setMetrics(metricsData);
         }
       } catch (err) {
-        console.error("ECG Studio initialization error:", err);
+        // Silently use pre-bundled static data
       }
     }
 
-    loadInitialECGData();
+    syncServerECGData();
   }, []);
 
   // Analyze arbitrary signal array
