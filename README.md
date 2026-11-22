@@ -160,18 +160,69 @@ Verifies dataset integrity, cleaning logic, feature engineering formulas, model 
 python src/test_pipeline.py
 ```
 
-### 4. Launch Streamlit Interactive Application
+### 4. Launch FastAPI Prediction Server
+The modern React application connects to a high-performance FastAPI backend supporting both tabular CVD risk predictions and ECG arrhythmia analysis:
 ```bash
-streamlit run app/app.py
+# In the project root directory
+uvicorn app.api:app --reload --port 8000
 ```
+API documentation and interactive Swagger UI are automatically served at `http://localhost:8000/docs`.
 
-### 5. Launch Modern React Web Dashboard
+### 5. Launch Modern React Web Dashboard (Local Dev)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+Open `http://localhost:5173` to access the full application.
 
 ---
+
+## 🌐 Full-Stack Cloud Deployment Guide (Vercel + Render)
+
+When deploying this project to production, the architecture separates the **React Frontend** and the **FastAPI Machine Learning Backend**:
+
+```
+[User Browser]
+      │
+      ├── (HTML / React UI) ───────────► [Vercel Hosting]
+      │                                       │
+      │                                       ▼ (VITE_API_URL env variable)
+      └── (REST API Requests / Inference) ──► [Render / Cloud Python Backend]
+                                              - uvicorn app.api:app
+                                              - LightGBM & Preprocessing Models
+```
+
+### Step 1: Deploy Backend to Render (Free)
+1. Go to [Render.com](https://render.com) and create an account.
+2. Click **New +** ➔ **Web Service**.
+3. Connect your GitHub repository (`cardiovascular`).
+4. Configure the service:
+   - **Environment:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn app.api:app --host 0.0.0.0 --port $PORT`
+5. Click **Create Web Service**. Render will assign a live URL, e.g.:
+   `https://cardiovascular-backend.onrender.com`
+
+### Step 2: Deploy Frontend to Vercel
+1. Go to [Vercel.com](https://vercel.com) and import the `frontend/` folder.
+2. Under **Environment Variables**, add:
+   - **Name:** `VITE_API_URL`
+   - **Value:** `https://your-backend.onrender.com` *(your live Render backend URL, without a trailing slash)*
+3. Deploy! Vercel will now route all `/predict`, `/ecg/predict`, and `/ecg/upload` calls to your cloud backend seamlessly.
+
+---
+
+## 📈 ECG Arrhythmia Studio: Supported Formats & Testing
+
+The ECG studio accepts real ambulatory ECG signals in multiple formats:
+- **Formats:** `.csv`, `.txt`, `.json`, `.dat`
+- **Supported Layouts:**
+  - Single column vertical float series with or without column headers (e.g., `"heart"`, `"V5_lead"`, `"MLII"`).
+  - Row arrays of 187 sample points (resampled automatically via linear interpolation and normalized to $[0, 1]$).
+  - 188-column MIT-BIH benchmark rows (the trailing label column is automatically detected and stripped).
+- **Test Files Provided:**
+  Pre-generated ready-to-test authentic MIT-BIH sample files are included in `data/demo_upload_files/` and `frontend/public/mitbih_102_single_lead.csv`.
+
 
 
