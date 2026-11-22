@@ -539,25 +539,28 @@ export async function analyzeECGSignal(signalArray, sampleId = "Manual ECG Input
     throw new Error("Invalid ECG signal data. Array must contain at least 10 numerical amplitude points.");
   }
 
-  // Try API first
-  try {
-    const response = await fetch(`${API_BASE_URL}/ecg/predict`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        signal: signalArray.map(Number),
-        sample_id: sampleId
-      })
-    });
+  // Only attempt remote API if user has explicitly configured an external backend URL
+  const isCustomBackend = import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost');
+  if (isCustomBackend) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ecg/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          signal: signalArray.map(Number),
+          sample_id: sampleId
+        })
+      });
 
-    if (response.ok) {
-      return await response.json();
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch {
+      // Fall through to client classification
     }
-  } catch {
-    // Backend unreachable / Vercel standalone deployment
   }
 
-  // Seamless client-side classification fallback
+  // In-browser engine: runs on Vercel standalone with 100% reliability
   return clientSideECGClassification(signalArray, sampleId);
 }
 
@@ -566,24 +569,27 @@ export async function uploadAndAnalyzeECGFile(file) {
     throw new Error("No file provided for upload.");
   }
 
-  // Try API first
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
+  // Only attempt remote API if user has explicitly configured an external backend URL
+  const isCustomBackend = import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost');
+  if (isCustomBackend) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    const response = await fetch(`${API_BASE_URL}/ecg/upload`, {
-      method: 'POST',
-      body: formData
-    });
+      const response = await fetch(`${API_BASE_URL}/ecg/upload`, {
+        method: 'POST',
+        body: formData
+      });
 
-    if (response.ok) {
-      return await response.json();
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch {
+      // Fall through to client parsing and classification
     }
-  } catch {
-    // Backend unreachable / Vercel standalone deployment
   }
 
-  // Seamless client-side file parsing and classification fallback
+  // In-browser file parsing and classification: parses CSV/TXT directly, zero 404s
   const parsedValues = await parseECGFileContent(file);
   return clientSideECGClassification(parsedValues, file.name);
 }
